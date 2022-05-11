@@ -7,68 +7,76 @@ import typer
 
 def install_deps_windows():
 
-    # def minikube():
-        # status = os.system("cd /tmp && curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
-        # &&  install minikube-linux-amd64 /usr/local/bin/minikube")
-
-        # if status != 0:
-        #     raise("failed to install minikube")
-
     def wsl():
         status = os.system("wsl --install")
 
         if status != 0:
-            raise("failed to install wsl")
+            raise("failed to install minikube")
+    
+    def enable_hyperv():
+       status = os.system("powershell -Command if((Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online).State -ne 'Enabled') \
+        { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All}")
+       if status != 0:
+            raise("failed to enable hyperv")
+    
+    def minikube():
+        status = os.system("powershell -Command New-Item -Path 'c:\\' -Name 'minikube' -ItemType Directory -Force")
+        if status != 0:
+            raise("failed to create directory")
 
-    def install_docker_desktop():
-
-        status = os.system("Install-Module -Name DockerMsftProvider -Repository PSGallery -Force")
+        status = os.system("powershell -Command Invoke-WebRequest -OutFile 'c:\\minikube\\minikube.exe' \
+        -Uri 'https://github.com/kubernetes/minikube/releases/latest/download/minikube-windows-amd64.exe' -UseBasicParsing")
 
         if status != 0:
-            raise("failed to install wsl")
+            raise("failed to install minikube")
 
-    def kubectl():
-        status = os.system("cd /tmp && curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl \
-        &&  install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl")
+        status = os.system("powershell -Command $oldpath = [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::Machine); \
+        if ($oldpath.Split(';') -inotcontains 'C:\minikube') { [Environment]::SetEnvironmentVariable('Path', $('{0};C:\minikube' -f $oldPath), \
+        [EnvironmentVariableTarget]::Machine) }")
 
         if status != 0:
-            raise("failed to install kubectl")
-    def helm():   
-        status = os.system("curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash")
-            
+            raise("failed to add minikube to path")
+
+    def helm():
+
+        status = os.system("powershell -Command choco install -y kubernetes-helm")
+
         if status != 0:
             raise("failed to install helm")
     
     def skaffold():
-        status = os.system("cd /tmp && curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 \
-        &&  install skaffold /usr/local/bin/")
+
+        status = os.system("powershell -Command choco install -y skaffold")
 
         if status != 0:
             raise("failed to install skaffold")
-    
+
     def aws_cli():
-        status = os.system("curl -fqsSL \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"/tmp/awscliv2.zip\" \
-        && unzip -q -o /tmp/awscliv2.zip -d /tmp && /tmp/aws/install -b /usr/local/bin \
-        && chmod +x /usr/local/bin/aws \
-        && rm -rf /tmp/aws /tmp/awscliv2.zip")
+        status = os.system("powershell -Command choco install -y awscli")
 
         if status != 0:
             raise("failed to install aws cli")
+
     #checks if minikube exists
-    if not exists('/usr/local/bin/minikube'):
+    if 'minikube' in os.getenv('Path'):
         minikube()
-    #checks if kubectl exists
-    if not exists('/usr/local/bin/kubectl') :
-        kubectl()
-    #checks if helm exists
-    if not exists('/usr/local/bin/helm'):
-        helm()
-    #checks if skaffold exists
-    if not exists('/usr/local/bin/skaffold'):
-        skaffold()
+
     #checks if aws exists
-    if not exists('/usr/local/bin/aws') :
+    if 'AWSCLIV2' in os.getenv('Path'):
         aws_cli()
+
+    #checks if helm exists
+    if exists(r'C:\ProgramData\chocolatey\bin\helm.exe'):
+        helm("yes")
+        
+    #checks if skaffold exists
+    if exists(r'C:\ProgramData\chocolatey\bin\skaffold.exe'):
+        skaffold("yes")
+
+
+
+    enable_hyperv()
+    
 
 
 def install_deps_linux():
