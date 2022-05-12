@@ -238,22 +238,26 @@ def deploy_linux(dir, dump_file_path):
         if status != 0:
             raise("failed to copy dump file")
     def verdaccio_install():
-        status = os.system("helm upgrade --install -f ~/npm-values.yaml -n cymulate npm verdaccio/verdaccio")
+        status = os.system("helm repo add verdaccio https://charts.verdaccio.org; \
+                            helm repo update; \
+                            helm upgrade --install -f npm-values.yaml -n cymulate npm verdaccio/verdaccio")
         if status != 0:
-            raise("failed to copy dump file")
+            raise("failed to install verdaccio")
 
     def run(cmd): 
         result = subprocess.run(cmd,stdout=subprocess.PIPE)
         return result.stdout.decode()
 
-    if 'Running' not in run(['minikube','status']):
-        start_minikube()
+    # if 'Running' not in run(['minikube','status']):
+    #     start_minikube()
 
     if 'attack' and 'recon' and 'cymulate' not in run(['kubectl','get','ns']):
         create_namespace()
     
     if "ingress-nginx" not in run(['kubectl', 'get', 'pods', '-n', 'ingress-nginx']):
         ingress_enable()
+
+    aws_token()
 
     if 'mongodb' not in run(['helm','-n','cymulate','list']):
         mongodb_install()
@@ -264,7 +268,7 @@ def deploy_linux(dir, dump_file_path):
     if 'mongo-express' not in run(['helm','-n','cymulate','list']):
         mongo_express_install()
     
-    mongo_dump()
+    # mongo_dump()
 
     if 'npm' not in run(['helm','-n','cymulate','list']):
         verdaccio_install()
