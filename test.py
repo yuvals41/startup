@@ -22,7 +22,7 @@ import sys
 # os.system("powershell -Command Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All")
 
 
-os.system("powershell -Command if((Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online).State -ne 'Enabled') { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All}")
+# os.system("powershell -Command if((Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online).State -ne 'Enabled') { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All}")
 
 
 # sys.

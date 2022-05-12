@@ -7,18 +7,48 @@ import typer
 
 def install_deps_windows():
 
-    def wsl():
-        status = os.system("wsl --install")
+    def choco():
+        status = os.system("powershell -Command Set-ExecutionPolicy Bypass -Scope Process -Force; \
+         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))")
 
         if status != 0:
-            raise("failed to install minikube")
+            raise("failed to install choco")
+
+    def wsl():
+        status = os.system("choco install wsl2")
+
+        if status != 0:
+            raise("failed to install wsl2")
+
+        status = os.system("wsl --set-default-version 2")
+
+        if status != 0:
+            raise("failed to set wsl to version 2")
     
-    def enable_hyperv():
+    def enable_windows_features():
        status = os.system("powershell -Command if((Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online).State -ne 'Enabled') \
         { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All}")
+        
        if status != 0:
             raise("failed to enable hyperv")
+
+       status = os.system("powershell -Command dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart")
+        
+       if status != 0:
+            raise("failed to enable windows subsystem for linux")
+
+       status = os.system("powershell -Command dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart")
+        
+       if status != 0:
+            raise("failed to enable virtual machine platform")
     
+    def docker():
+        status = os.system("choco install -y docker-desktop")
+
+        if status != 0:
+            raise("failed to install docker")
+
     def minikube():
         status = os.system("powershell -Command New-Item -Path 'c:\\' -Name 'minikube' -ItemType Directory -Force")
         if status != 0:
@@ -57,25 +87,38 @@ def install_deps_windows():
         if status != 0:
             raise("failed to install aws cli")
 
+    #checks if choco exists
+    if exists(r'C:\ProgramData\chocolatey\bin'):
+        choco()
+
+    #enables important features for docker
+    enable_windows_features()
+
+    #set the wsl version to 2
+    if exists(r'C:\ProgramData\chocolatey\lib\wsl2'):
+        wsl()
+
+    #checks if Docker exists
+    if exists(r'C:\Program Files\Docker\Docker\resources\bin\docker.exe'):
+        docker()
+
     #checks if minikube exists
-    if 'minikube' in os.getenv('Path'):
+    if exists(r'c:\minikube\minikube.exe'):
         minikube()
 
     #checks if aws exists
-    if 'AWSCLIV2' in os.getenv('Path'):
+    if exists(r'C:\Program Files\Amazon\AWSCLIV2\aws.exe'):
         aws_cli()
 
     #checks if helm exists
     if exists(r'C:\ProgramData\chocolatey\bin\helm.exe'):
-        helm("yes")
+        helm()
         
     #checks if skaffold exists
     if exists(r'C:\ProgramData\chocolatey\bin\skaffold.exe'):
-        skaffold("yes")
+        skaffold()
 
 
-
-    enable_hyperv()
     
 
 
